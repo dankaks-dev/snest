@@ -1,8 +1,8 @@
 import { useState } from "react";
-import './styles.css';
+import '../styles.css';
 
 function calculateMortgage(principal, annualRate = 0.06, years = 25) {
-  const monthlyRate = annualRate / 12;
+  const monthlyRate = annualRate / 12 / 100;
   const n = years * 12;
   return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -n));
 }
@@ -82,7 +82,8 @@ export default function Home() {
           const principal = price * (1 - form.depositPercent / 100);
           const monthlyPayment = calculateMortgage(
             principal,
-            form.interestRate / 100
+            form.interestRate,
+            25
           );
           const requiredSalary = (monthlyPayment * 12) / 4.5;
           return {
@@ -100,7 +101,6 @@ export default function Home() {
       setMatches(enriched);
       setStep(4);
     } catch (e) {
-      console.error(e);
       setError("Error fetching listings. Try again?");
     } finally {
       setLoading(false);
@@ -118,19 +118,18 @@ export default function Home() {
           <input
             name="budget"
             type="text"
-            placeholder="e.g. 500,000"
+            placeholder="£500,000"
             value={formatPrice(form.budget)}
             onChange={handleChange}
             className="input"
           />
           <label>Bedrooms:</label>
-          <select name="bedrooms" value={form.bedrooms} onChange={handleChange}>
+          <select name="bedrooms" value={form.bedrooms} onChange={handleChange} className="input">
             <option value="">Any</option>
             <option value={1}>1+</option>
             <option value={2}>2+</option>
             <option value={3}>3+</option>
           </select>
-          <br /><br />
 
           <label>Deposit: {form.depositPercent}%</label>
           <input
@@ -143,7 +142,7 @@ export default function Home() {
           />
 
           <label>Interest Rate:</label>
-          <select name="interestRate" value={form.interestRate} onChange={handleChange}>
+          <select name="interestRate" value={form.interestRate} onChange={handleChange} className="input">
             {AVAILABLE_RATES.map(r => (
               <option key={r} value={r}>{r}%</option>
             ))}
@@ -156,7 +155,7 @@ export default function Home() {
             <label style={{ marginLeft: 10 }}><input type="checkbox" name="nearGreen" checked={form.nearGreen} onChange={handleChange} /> Green spaces</label>
           </div>
 
-          <button onClick={nextStep} disabled={!form.budget} className="button">Next</button>
+          <button onClick={nextStep} disabled={!form.budget} className="button" style={{ marginTop: 20 }}>Next</button>
         </div>
       )}
 
@@ -171,7 +170,7 @@ export default function Home() {
             onChange={handleChange}
             className="input"
           />
-          <button onClick={prevStep} className="button">Back</button>
+          <button onClick={prevStep} className="button" style={{ marginRight: 10 }}>Back</button>
           <button onClick={findMatches} className="button">Search Properties</button>
           {loading && <p>Loading...</p>}
           {error && <p style={{ color: "red" }}>{error}</p>}
@@ -182,13 +181,11 @@ export default function Home() {
         <div>
           <h2>Properties Found</h2>
           {!matches?.length && <p>No results. Try adjusting filters.</p>}
-          <ul>
+          <ul style={{ listStyle: "none", padding: 0 }}>
             {matches.map(p => (
               <li key={p.id} className="property-card">
-                <a href={p.srcUrl} target="_blank" rel="noopener noreferrer">
-                  <strong>{p.title}</strong>
-                </a> – {formatPrice(p.price)}<br />
-                {p.img && <img src={p.img} alt="" width="100" />}
+                <a href={p.srcUrl} target="_blank" rel="noopener noreferrer"><strong>{p.title}</strong></a> – {formatPrice(p.price)}<br />
+                {p.img && <img src={p.img} alt="" width="150" style={{ marginTop: 10, borderRadius: 8 }} />}
                 <p>{p.summary}</p>
                 <p><strong>Monthly Mortgage:</strong> £{p.monthlyPayment.toFixed(0)}</p>
                 <p><strong>Required Salary:</strong> £{p.requiredSalary.toFixed(0)}</p>
