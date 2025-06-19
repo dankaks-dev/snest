@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// Mortgage calculator
 function calculateMortgage(principal, annualRate = 0.06, years = 25) {
   const monthlyRate = annualRate / 12;
   const n = years * 12;
@@ -12,7 +11,7 @@ const KEYWORDS = {
   garden: "garden",
   balcony: "balcony",
   offStreet: "off_street_parking",
-  greenSpaces: "green" // approximate parameter
+  greenSpaces: "green"
 };
 
 export default function Home() {
@@ -34,19 +33,24 @@ export default function Home() {
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
-    setForm(f => ({
-      ...f,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : name === "bedrooms" || name === "budget"
-          ? Number(value)
-          : value
-    }));
+    if (name === "budget") {
+      const cleaned = value.replace(/[^0-9]/g, "");
+      setForm(f => ({ ...f, budget: cleaned }));
+    } else {
+      setForm(f => ({
+        ...f,
+        [name]: type === "checkbox" ? checked : value
+      }));
+    }
   };
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
+
+  const formatPrice = val => {
+    if (!val) return "";
+    return "£" + Number(val).toLocaleString();
+  };
 
   const findMatches = async () => {
     setError(null);
@@ -55,16 +59,13 @@ export default function Home() {
       const loc = encodeURIComponent(form.location);
       const price_max = form.budget;
       const listing_type = "buy";
-      // Build keywords list
       const keywords = [];
       if (form.needsGarden) keywords.push(KEYWORDS.garden);
       if (form.needsBalcony) keywords.push(KEYWORDS.balcony);
       if (form.needsOffStreet) keywords.push(KEYWORDS.offStreet);
       if (form.nearGreen) keywords.push(KEYWORDS.greenSpaces);
       const kwParam =
-        keywords.length > 0
-          ? `&keywords=${keywords.join(",")}`
-          : "";
+        keywords.length > 0 ? `&keywords=${keywords.join(",")}` : "";
 
       const url = `https://api.nestoria.co.uk/api?country=uk&pretty=1&action=search_listings&listing_type=${listing_type}&place_name=${loc}&page=1&price_max=${price_max}${kwParam}`;
       const res = await fetch(url);
@@ -77,8 +78,7 @@ export default function Home() {
         )
         .map(p => {
           const price = Number(p.price);
-          const principal =
-            price * (1 - form.depositPercent / 100);
+          const principal = price * (1 - form.depositPercent / 100);
           const monthlyPayment = calculateMortgage(
             principal,
             form.interestRate / 100
@@ -106,135 +106,93 @@ export default function Home() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "auto", padding: 20, fontFamily: "Arial" }}>
-      <h1>🏡 Find Your First Home</h1>
+    <div style={{ maxWidth: 700, margin: "auto", padding: 20, fontFamily: "Segoe UI" }}>
+      <h1 style={{ color: "#2c3e50" }}>🏡 HomeMatch Finder</h1>
 
       {step === 1 && (
-        <>
-          <h2>Budget & Preferences</h2>
+        <div>
+          <h2>Step 1: Budget & Preferences</h2>
+          <label>Budget (£):</label>
           <input
             name="budget"
-            type="number"
-            placeholder="Max price (£)"
-            value={form.budget}
+            type="text"
+            placeholder="e.g. 500,000"
+            value={formatPrice(form.budget)}
             onChange={handleChange}
-            style={{ width: "100%", padding: 8 }}
+            style={{ width: "100%", padding: 8, fontSize: 16 }}
           />
-          <label>
-            Bedrooms above:
-            <select
-              name="bedrooms"
-              value={form.bedrooms}
-              onChange={handleChange}
-              style={{ marginLeft: 10 }}
-            >
-              <option value="">Any</option>
-              <option value={1}>1+</option>
-              <option value={2}>2+</option>
-              <option value={3}>3+</option>
-            </select>
-          </label>
+          <label>Bedrooms:</label>
+          <select name="bedrooms" value={form.bedrooms} onChange={handleChange}>
+            <option value="">Any</option>
+            <option value={1}>1+</option>
+            <option value={2}>2+</option>
+            <option value={3}>3+</option>
+          </select>
+          <br /><br />
 
-          <label style={{ display: "block" }}>
-            Deposit: {form.depositPercent}%
-            <input
-              name="depositPercent"
-              type="range"
-              min="5"
-              max="50"
-              value={form.depositPercent}
-              onChange={handleChange}
-              style={{ width: "100%" }}
-            />
-          </label>
+          <label>Deposit: {form.depositPercent}%</label>
+          <input
+            type="range"
+            name="depositPercent"
+            min="5"
+            max="50"
+            value={form.depositPercent}
+            onChange={handleChange}
+          />
 
-          <label>
-            Interest Rate:
-            <select
-              name="interestRate"
-              value={form.interestRate}
-              onChange={handleChange}
-              title="Annual mortgage rate"
-              style={{ marginLeft: 10 }}
-            >
-              {AVAILABLE_RATES.map(r => (
-                <option key={r} value={r}>
-                  {r}%
-                </option>
-              ))}
-            </select>
-            <span title="Lower rates mean lower monthly payments" style={{ cursor: "help", marginLeft: 4 }}>?</span>
-          </label>
+          <label>Interest Rate:</label>
+          <select name="interestRate" value={form.interestRate} onChange={handleChange}>
+            {AVAILABLE_RATES.map(r => (
+              <option key={r} value={r}>{r}%</option>
+            ))}
+          </select>
 
           <div style={{ marginTop: 10 }}>
-            <label>
-              <input type="checkbox" name="needsGarden" checked={form.needsGarden} onChange={handleChange} /> Garden
-            </label>
-            <label style={{ marginLeft: 10 }}>
-              <input type="checkbox" name="needsBalcony" checked={form.needsBalcony} onChange={handleChange} /> Balcony
-            </label>
-            <label style={{ marginLeft: 10 }}>
-              <input type="checkbox" name="needsOffStreet" checked={form.needsOffStreet} onChange={handleChange} /> Off-street parking
-            </label>
-            <label style={{ marginLeft: 10 }}>
-              <input type="checkbox" name="nearGreen" checked={form.nearGreen} onChange={handleChange} /> Near green spaces
-            </label>
+            <label><input type="checkbox" name="needsGarden" checked={form.needsGarden} onChange={handleChange} /> Garden</label>
+            <label style={{ marginLeft: 10 }}><input type="checkbox" name="needsBalcony" checked={form.needsBalcony} onChange={handleChange} /> Balcony</label>
+            <label style={{ marginLeft: 10 }}><input type="checkbox" name="needsOffStreet" checked={form.needsOffStreet} onChange={handleChange} /> Off-street parking</label>
+            <label style={{ marginLeft: 10 }}><input type="checkbox" name="nearGreen" checked={form.nearGreen} onChange={handleChange} /> Green spaces</label>
           </div>
 
-          <button onClick={nextStep} disabled={!form.budget} style={{ marginTop: 20 }}>
-            Next
-          </button>
-        </>
+          <button onClick={nextStep} disabled={!form.budget} style={{ marginTop: 20 }}>Next</button>
+        </div>
       )}
 
       {step === 2 && (
-        <>
-          <h2>Location</h2>
+        <div>
+          <h2>Step 2: Location</h2>
           <input
             name="location"
             type="text"
-            placeholder="City, postcode or area"
+            placeholder="e.g. London, Bristol, Leeds"
             value={form.location}
             onChange={handleChange}
-            style={{ width: "100%", padding: 8 }}
+            style={{ width: "100%", padding: 8, fontSize: 16 }}
           />
           <button onClick={prevStep}>Back</button>
           <button onClick={findMatches}>Search Properties</button>
           {loading && <p>Loading...</p>}
           {error && <p style={{ color: "red" }}>{error}</p>}
-        </>
+        </div>
       )}
 
       {step === 4 && (
-        <>
-          <h2>Matches Found</h2>
-          {!matches?.length && <p>No properties found. Try new settings.</p>}
+        <div>
+          <h2>Properties Found</h2>
+          {!matches?.length && <p>No results. Try adjusting filters.</p>}
           <ul>
-            {matches.map((p, i) => (
-              <li key={i} style={{ marginBottom: 20 }}>
-                <a href={p.srcUrl} target="_blank">
-                  <strong>{p.title}</strong>
-                </a> – £{p.price.toLocaleString()}<br />
+            {matches.map(p => (
+              <li key={p.id} style={{ marginBottom: 20, borderBottom: "1px solid #ccc", paddingBottom: 10 }}>
+                <a href={p.srcUrl} target="_blank"><strong>{p.title}</strong></a> – {formatPrice(p.price)}<br />
                 {p.img && <img src={p.img} alt="" width="100" />}
                 <p>{p.summary}</p>
-                <p>
-                  <strong>Mortgage:</strong> £{p.monthlyPayment.toFixed(0)}/mo &nbsp;
-                  <span title="Based on your deposit and interest rate">?</span>
-                </p>
-                <p>
-                  <strong>Salary needed:</strong> £{p.requiredSalary.toFixed(0)}/yr &nbsp;
-                  <span title="Assumes lenders give 4.5× your salary mortgage">?</span>
-                </p>
+                <p><strong>Monthly Mortgage:</strong> £{p.monthlyPayment.toFixed(0)}</p>
+                <p><strong>Required Salary:</strong> £{p.requiredSalary.toFixed(0)}</p>
               </li>
             ))}
           </ul>
-          <button onClick={() => setStep(1)}>Start Over</button>
-          <div style={{ marginTop: 20 }}>
-            <a href="https://resources.nestimg.com/nestoria/img/pbr_v1.png">
-              <img src="https://resources.nestimg.com/nestoria/img/pbr_v1.png" alt="powered by nestoria.co.uk" width="200" />
-            </a>
-          </div>
-        </>
+          <button onClick={() => setStep(1)}>Start Again</button>
+        </div>
       )}
     </div>
   );
