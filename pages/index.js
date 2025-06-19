@@ -1,5 +1,5 @@
 import { useState } from "react";
-import './styles.css';
+import '../styles.css';
 
 function calculateMortgage(principal, annualRate = 0.06, years = 25) {
   const monthlyRate = annualRate / 12 / 100;
