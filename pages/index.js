@@ -1,4 +1,5 @@
 import { useState } from "react";
+import './styles.css';
 
 function calculateMortgage(principal, annualRate = 0.06, years = 25) {
   const monthlyRate = annualRate / 12;
@@ -99,6 +100,7 @@ export default function Home() {
       setMatches(enriched);
       setStep(4);
     } catch (e) {
+      console.error(e);
       setError("Error fetching listings. Try again?");
     } finally {
       setLoading(false);
@@ -106,8 +108,8 @@ export default function Home() {
   };
 
   return (
-    <div style={{ maxWidth: 700, margin: "auto", padding: 20, fontFamily: "Segoe UI" }}>
-      <h1 style={{ color: "#2c3e50" }}>🏡 HomeMatch Finder</h1>
+    <div className="app-container">
+      <h1 className="title">🏡 HomeMatch Finder</h1>
 
       {step === 1 && (
         <div>
@@ -119,7 +121,7 @@ export default function Home() {
             placeholder="e.g. 500,000"
             value={formatPrice(form.budget)}
             onChange={handleChange}
-            style={{ width: "100%", padding: 8, fontSize: 16 }}
+            className="input"
           />
           <label>Bedrooms:</label>
           <select name="bedrooms" value={form.bedrooms} onChange={handleChange}>
@@ -154,7 +156,7 @@ export default function Home() {
             <label style={{ marginLeft: 10 }}><input type="checkbox" name="nearGreen" checked={form.nearGreen} onChange={handleChange} /> Green spaces</label>
           </div>
 
-          <button onClick={nextStep} disabled={!form.budget} style={{ marginTop: 20 }}>Next</button>
+          <button onClick={nextStep} disabled={!form.budget} className="button">Next</button>
         </div>
       )}
 
@@ -167,10 +169,10 @@ export default function Home() {
             placeholder="e.g. London, Bristol, Leeds"
             value={form.location}
             onChange={handleChange}
-            style={{ width: "100%", padding: 8, fontSize: 16 }}
+            className="input"
           />
-          <button onClick={prevStep}>Back</button>
-          <button onClick={findMatches}>Search Properties</button>
+          <button onClick={prevStep} className="button">Back</button>
+          <button onClick={findMatches} className="button">Search Properties</button>
           {loading && <p>Loading...</p>}
           {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
@@ -182,8 +184,10 @@ export default function Home() {
           {!matches?.length && <p>No results. Try adjusting filters.</p>}
           <ul>
             {matches.map(p => (
-              <li key={p.id} style={{ marginBottom: 20, borderBottom: "1px solid #ccc", paddingBottom: 10 }}>
-                <a href={p.srcUrl} target="_blank"><strong>{p.title}</strong></a> – {formatPrice(p.price)}<br />
+              <li key={p.id} className="property-card">
+                <a href={p.srcUrl} target="_blank" rel="noopener noreferrer">
+                  <strong>{p.title}</strong>
+                </a> – {formatPrice(p.price)}<br />
                 {p.img && <img src={p.img} alt="" width="100" />}
                 <p>{p.summary}</p>
                 <p><strong>Monthly Mortgage:</strong> £{p.monthlyPayment.toFixed(0)}</p>
@@ -191,7 +195,7 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <button onClick={() => setStep(1)}>Start Again</button>
+          <button onClick={() => setStep(1)} className="button">Start Again</button>
         </div>
       )}
     </div>
